@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diabetes Risk Assessment Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        .prediction-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .results-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .panel-title {
+            font-size: 1.4rem;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .predict-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .predict-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .predict-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-card {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .risk-indicator {
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .risk-low {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .risk-medium {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: white;
+        }
+
+        .risk-high {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            color: white;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .metric-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .recommendations {
+            margin-top: 20px;
+        }
+
+        .recommendations h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .recommendation-item {
+            background: #e3f2fd;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+
+        .charts-section {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="header">
+            <h1>🏥 Diabetes Risk Assessment Dashboard</h1>
+            <p>Professional Healthcare AI System - Real-time Prediction & Analysis</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Patient Input Panel -->
+            <div class="prediction-panel">
+                <h2 class="panel-title">
+                    👤 Patient Information
+                </h2>
+                
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+
+                <form id="predictionForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="age">Age (years)</label>
+                            <input type="number" id="age" name="age" min="18" max="100" value="45" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gender">Gender</label>
+                            <select id="gender" name="gender" required>
+                                <option value="0">Female</option>
+                                <option value="1" selected>Male</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bmi">BMI (kg/m²)</label>
+                            <input type="number" id="bmi" name="bmi" min="15" max="50" step="0.1" value="28.5" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="glucose">Glucose (mg/dL)</label>
+                            <input type="number" id="glucose" name="glucose" min="70" max="300" value="125" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bp_systolic">Systolic BP (mmHg)</label>
+                            <input type="number" id="bp_systolic" name="bp_systolic" min="90" max="200" value="140" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="bp_diastolic">Diastolic BP (mmHg)</label>
+                            <input type="number" id="bp_diastolic" name="bp_diastolic" min="60" max="120" value="90" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="insulin">Insulin (μU/mL)</label>
+                            <input type="number" id="insulin" name="insulin" min="2" max="100" step="0.1" value="25.0" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="family_history">Family History</label>
+                            <select id="family_history" name="family_history" required>
+                                <option value="0">No</option>
+                                <option value="1" selected>Yes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="activity_level">Activity Level</label>
+                            <select id="activity_level" name="activity_level" required>
+                                <option value="1">Very Low</option>
+                                <option value="2" selected>Low</option>
+                                <option value="3">Moderate</option>
+                                <option value="4">High</option>
+                                <option value="5">Very High</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="smoking">Smoking Status</label>
+                            <select id="smoking" name="smoking" required>
+                                <option value="0">Never</option>
+                                <option value="1" selected>Former</option>
+                                <option value="2">Current</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="predict-btn" id="predictBtn">
+                        🔮 Predict Diabetes Risk
+                    </button>
+                </form>
+
+                <div class="loading" id="loadingDiv">
+                    <div class="spinner"></div>
+                    <p>Analyzing patient data...</p>
+                </div>
+            </div>
+
+            <!-- Results Panel -->
+            <div class="results-panel">
+                <h2 class="panel-title">
+                    📊 Prediction Results
+                </h2>
+
+                <div class="result-card" id="resultsCard">
+                    <div class="risk-indicator" id="riskIndicator">
+                        <h3 id="riskLevel">RISK LEVEL</h3>
+                        <p id="riskProbability">Probability: 0%</p>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-value" id="diabetesProb">0%</div>
+                            <div class="metric-label">Diabetes Risk</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value" id="modelAccuracy">0%</div>
+                            <div class="metric-label">Model Accuracy</div>
+                        </div>
+                    </div>
+
+                    <div class="recommendations">
+                        <h3>🏥 Clinical Recommendations</h3>
+                        <div id="clinicalAction" class="recommendation-item">
+                            Recommendations will appear here...
+                        </div>
+                        
+                        <h3>💡 Lifestyle Recommendations</h3>
+                        <div id="lifestyleRecommendations">
+                            Lifestyle suggestions will appear here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <h2 class="panel-title">📈 Risk Analysis & Trends</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="factorAnalysisChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let riskDistributionChart = null;
+        let factorAnalysisChart = null;
+        let predictionHistory = [];
+
+        // API Configuration
+        const API_BASE_URL = 'http://localhost:5000';
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+            loadPredictionHistory();
+        });
+
+        // Form submission handler
+        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await makePrediction();
+        });
+
+        async function makePrediction() {
+            const form = document.getElementById('predictionForm');
+            const loadingDiv = document.getElementById('loadingDiv');
+            const predictBtn = document.getElementById('predictBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
+
+            // Hide previous messages
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+
+            // Show loading state
+            loadingDiv.style.display = 'block';
+            predictBtn.disabled = true;
+
+            try {
+                // Collect form data
+                const formData = new FormData(form);
+                const patientData = {};
+                
+                for (let [key, value] of formData.entries()) {
+                    patientData[key] = parseFloat(value);
+                }
+
+                // Make API request
+                const response = await fetch(`${API_BASE_URL}/predict`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(patientData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                // Display results
+                displayResults(result, patientData);
+                
+                // Update charts
+                updateCharts(result, patientData);
+                
+                // Save to history
+                savePredictionToHistory(result, patientData);
+
+                // Show success message
+                successMessage.textContent = 'Prediction completed successfully!';
+                successMessage.style.display = 'block';
+
+            } catch (error) {
+                console.error('Prediction error:', error);
+                errorMessage.textContent = `Error: ${error.message}. Make sure the API is running on ${API_BASE_URL}`;
+                errorMessage.style.display = 'block';
+            } finally {
+                // Hide loading state
+                loadingDiv.style.display = 'none';
+                predictBtn.disabled = false;
+            }
+        }
+
+        function displayResults(result, patientData) {
+            const resultsCard = document.getElementById('resultsCard');
+            const riskIndicator = document.getElementById('riskIndicator');
+            const riskLevel = document.getElementById('riskLevel');
+            const riskProbability = document.getElementById('riskProbability');
+            const diabetesProb = document.getElementById('diabetesProb');
+            const modelAccuracy = document.getElementById('modelAccuracy');
+            const clinicalAction = document.getElementById('clinicalAction');
+            const lifestyleRecommendations = document.getElementById('lifestyleRecommendations');
+
+            // Show results card
+            resultsCard.style.display = 'block';
+
+            // Update risk indicator
+            const risk = result.prediction.risk_level;
+            const probability = result.prediction.diabetes_probability;
+
+            riskLevel.textContent = `${risk} RISK`;
+            riskProbability.textContent = `Probability: ${(probability * 100).toFixed(1)}%`;
+            diabetesProb.textContent = `${(probability * 100).toFixed(1)}%`;
+
+            // Set risk indicator color
+            riskIndicator.className = 'risk-indicator';
+            if (risk === 'HIGH') {
+                riskIndicator.classList.add('risk-high');
+            } else if (risk === 'MEDIUM') {
+                riskIndicator.classList.add('risk-medium');
+            } else {
+                riskIndicator.classList.add('risk-low');
+            }
+
+            // Update model accuracy
+            if (result.model_info && result.model_info.model_accuracy) {
+                modelAccuracy.textContent = `${(result.model_info.model_accuracy * 100).toFixed(1)}%`;
+            }
+
+            // Update clinical recommendations
+            clinicalAction.textContent = result.recommendations.clinical_action;
+
+            // Update lifestyle recommendations
+            lifestyleRecommendations.innerHTML = '';
+            if (result.recommendations.lifestyle_factors && result.recommendations.lifestyle_factors.length > 0) {
+                result.recommendations.lifestyle_factors.forEach(recommendation => {
+                    const div = document.createElement('div');
+                    div.className = 'recommendation-item';
+                    div.textContent = recommendation;
+                    lifestyleRecommendations.appendChild(div);
+                });
+            } else {
+                const div = document.createElement('div');
+                div.className = 'recommendation-item';
+                div.textContent = 'Continue maintaining healthy lifestyle habits.';
+                lifestyleRecommendations.appendChild(div);
+            }
+        }
+
+        function initializeCharts() {
+            // Risk Distribution Chart
+            const riskCtx = document.getElementById('riskDistributionChart').getContext('2d');
+            riskDistributionChart = new Chart(riskCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                    datasets: [{
+                        data: [1, 1, 1], // Initial placeholder data
+                        backgroundColor: [
+                            '#4CAF50',
+                            '#FF9800',
+                            '#f44336'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Risk Distribution',
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Factor Analysis Chart
+            const factorCtx = document.getElementById('factorAnalysisChart').getContext('2d');
+            factorAnalysisChart = new Chart(factorCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Age', 'BMI', 'Glucose', 'BP', 'Family History', 'Activity'],
+                    datasets: [{
+                        label: 'Risk Factors',
+                        data: [50, 50, 50, 50, 50, 50], // Initial placeholder
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Risk Factor Analysis',
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(result, patientData) {
+            // Update risk distribution
+            updateRiskDistribution(result.prediction.risk_level);
+            
+            // Update factor analysis
+            updateFactorAnalysis(patientData);
+        }
+
+        function updateRiskDistribution(currentRisk) {
+            // Get current data
+            let lowCount = riskDistributionChart.data.datasets[0].data[0];
+            let mediumCount = riskDistributionChart.data.datasets[0].data[1];
+            let highCount = riskDistributionChart.data.datasets[0].data[2];
+
+            // Increment based on current prediction
+            if (currentRisk === 'LOW') {
+                lowCount++;
+            } else if (currentRisk === 'MEDIUM') {
+                mediumCount++;
+            } else if (currentRisk === 'HIGH') {
+                highCount++;
+            }
+
+            // Update chart
+            riskDistributionChart.data.datasets[0].data = [lowCount, mediumCount, highCount];
+            riskDistributionChart.update();
+        }
+
+        function updateFactorAnalysis(patientData) {
+            // Normalize factors to 0-100 scale for radar chart
+            const factors = [
+                Math.min(patientData.age / 100 * 100, 100), // Age factor
+                Math.min(patientData.bmi / 50 * 100, 100), // BMI factor
+                Math.min(patientData.glucose / 300 * 100, 100), // Glucose factor
+                Math.min(patientData.bp_systolic / 200 * 100, 100), // BP factor
+                patientData.family_history * 100, // Family history (0 or 100)
+                (6 - patientData.activity_level) / 5 * 100 // Activity (inverted)
+            ];
+
+            factorAnalysisChart.data.datasets[0].data = factors;
+            factorAnalysisChart.update();
+        }
+
+        function savePredictionToHistory(result, patientData) {
+            const prediction = {
+                timestamp: new Date().toISOString(),
+                patientData: patientData,
+                result: result
+            };
+
+            predictionHistory.push(prediction);
+            
+            // Keep only last 10 predictions
+            if (predictionHistory.length > 10) {
+                predictionHistory = predictionHistory.slice(-10);
+            }
+
+            // Save to localStorage
+            localStorage.setItem('diabetesPredictionHistory', JSON.stringify(predictionHistory));
+        }
+
+        function loadPredictionHistory() {
+            const saved = localStorage.getItem('diabetesPredictionHistory');
+            if (saved) {
+                predictionHistory = JSON.parse(saved);
+                
+                // Update charts with historical data
+                if (predictionHistory.length > 0) {
+                    const riskCounts = { LOW: 0, MEDIUM: 0, HIGH: 0 };
+                    
+                    predictionHistory.forEach(pred => {
+                        const risk = pred.result.prediction.risk_level;
+                        riskCounts[risk]++;
+                    });
+
+                    riskDistributionChart.data.datasets[0].data = [
+                        riskCounts.LOW,
+                        riskCounts.MEDIUM,
+                        riskCounts.HIGH
+                    ];
+                    riskDistributionChart.update();
+                }
+            }
+        }
+
+        // Load sample patient data buttons
+        function loadSamplePatient(type) {
+            const samples = {
+                low: {
+                    age: 25, gender: 0, bmi: 22.0, bp_systolic: 110, bp_diastolic: 70,
+                    glucose: 85, insulin: 8.0, family_history: 0, activity_level: 4, smoking: 0
+                },
+                medium: {
+                    age: 45, gender: 1, bmi: 27.5, bp_systolic: 130, bp_diastolic: 85,
+                    glucose: 110, insulin: 20.0, family_history: 1, activity_level: 2, smoking: 1
+                },
+                high: {
+                    age: 65, gender: 1, bmi: 32.5, bp_systolic: 150, bp_diastolic: 95,
+                    glucose: 180, insulin: 45.0, family_history: 1, activity_level: 1, smoking: 2
+                }
+            };
+
+            const sample = samples[type];
+            if (sample) {
+                Object.keys(sample).forEach(key => {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.value = sample[key];
+                    }
+                });
+            }
+        }
+
+        // Add sample buttons (you can add these to the HTML if needed)
+        // <button onclick="loadSamplePatient('low')">Load Low Risk Sample</button>
+        // <button onclick="loadSamplePatient('medium')">Load Medium Risk Sample</button>
+        // <button onclick="loadSamplePatient('high')">Load High Risk Sample</button>
+    </script>
+</body>
+</html>
