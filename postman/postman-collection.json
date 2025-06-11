@@ -1,0 +1,1110 @@
+{
+  "info": {
+    "name": "Diabetes Risk Assessment API",
+    "description": "Complete Postman collection for testing the healthcare ML diabetes prediction system. This API provides clinical decision support for diabetes risk assessment based on patient vitals and medical history.",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Set timestamp for requests",
+          "pm.globals.set('timestamp', new Date().toISOString());"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "1.0.0",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('status');",
+                  "    pm.expect(responseJson).to.have.property('service');",
+                  "    pm.expect(responseJson).to.have.property('model_loaded');",
+                  "    pm.expect(responseJson).to.have.property('timestamp');",
+                  "});",
+                  "",
+                  "pm.test('Service is healthy', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.status).to.eql('healthy');",
+                  "    pm.expect(responseJson.model_loaded).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('Response time is less than 1000ms', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Check if the diabetes prediction API is healthy and the ML model is loaded successfully."
+          },
+          "response": []
+        },
+        {
+          "name": "Model Information",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Model metadata is present', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('model_metadata');",
+                  "    pm.expect(responseJson).to.have.property('feature_names');",
+                  "    pm.expect(responseJson).to.have.property('model_type');",
+                  "});",
+                  "",
+                  "pm.test('Model has good performance', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const accuracy = responseJson.model_metadata.accuracy;",
+                  "    const auc = responseJson.model_metadata.auc_score;",
+                  "    pm.expect(accuracy).to.be.above(0.8);",
+                  "    pm.expect(auc).to.be.above(0.85);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/model/info",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "model",
+                "info"
+              ]
+            },
+            "description": "Get detailed information about the trained diabetes prediction model including accuracy, features, and metadata."
+          },
+          "response": []
+        },
+        {
+          "name": "Prometheus Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Contains diabetes prediction metrics', function () {",
+                  "    const responseText = pm.response.text();",
+                  "    pm.expect(responseText).to.include('diabetes_predictions_total');",
+                  "    pm.expect(responseText).to.include('diabetes_prediction_duration_seconds');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "text/plain"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "Get Prometheus metrics for monitoring API performance, prediction counts, and latency."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for checking API health, model information, and monitoring metrics."
+    },
+    {
+      "name": "Diabetes Risk Predictions",
+      "item": [
+        {
+          "name": "Low Risk Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Prediction response structure is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('prediction');",
+                  "    pm.expect(responseJson).to.have.property('recommendations');",
+                  "    pm.expect(responseJson).to.have.property('model_info');",
+                  "});",
+                  "",
+                  "pm.test('Risk level is valid', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const validRiskLevels = ['LOW', 'MEDIUM', 'HIGH'];",
+                  "    pm.expect(validRiskLevels).to.include(responseJson.prediction.risk_level);",
+                  "});",
+                  "",
+                  "pm.test('Probabilities sum to 1', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const diabetesProb = responseJson.prediction.diabetes_probability;",
+                  "    const noDiabetesProb = responseJson.prediction.no_diabetes_probability;",
+                  "    const sum = Math.round((diabetesProb + noDiabetesProb) * 1000) / 1000;",
+                  "    pm.expect(sum).to.be.closeTo(1.0, 0.001);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable for clinical use', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 25,\n  \"gender\": 0,\n  \"bmi\": 22.0,\n  \"bp_systolic\": 110,\n  \"bp_diastolic\": 70,\n  \"glucose\": 85,\n  \"insulin\": 8.0,\n  \"family_history\": 0,\n  \"activity_level\": 4,\n  \"smoking\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test prediction for a young, healthy patient with low diabetes risk factors.\n\n**Patient Profile:**\n- 25-year-old female\n- Normal BMI (22.0)\n- Normal blood pressure (110/70)\n- Normal glucose (85 mg/dL)\n- No family history\n- High activity level\n- Non-smoker\n\n**Expected Result:** LOW risk"
+          },
+          "response": []
+        },
+        {
+          "name": "Medium Risk Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Risk level is medium or high', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const riskLevel = responseJson.prediction.risk_level;",
+                  "    pm.expect(['MEDIUM', 'HIGH']).to.include(riskLevel);",
+                  "});",
+                  "",
+                  "pm.test('Diabetes probability is reasonable for medium risk', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const diabetesProb = responseJson.prediction.diabetes_probability;",
+                  "    pm.expect(diabetesProb).to.be.above(0.2);",
+                  "    pm.expect(diabetesProb).to.be.below(0.8);",
+                  "});",
+                  "",
+                  "pm.test('Clinical recommendations provided', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.recommendations.clinical_action).to.be.a('string');",
+                  "    pm.expect(responseJson.recommendations.lifestyle_factors).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 45,\n  \"gender\": 1,\n  \"bmi\": 27.5,\n  \"bp_systolic\": 130,\n  \"bp_diastolic\": 85,\n  \"glucose\": 110,\n  \"insulin\": 20.0,\n  \"family_history\": 1,\n  \"activity_level\": 2,\n  \"smoking\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test prediction for a middle-aged patient with moderate diabetes risk factors.\n\n**Patient Profile:**\n- 45-year-old male\n- Overweight BMI (27.5)\n- Elevated blood pressure (130/85)\n- Slightly elevated glucose (110 mg/dL)\n- Family history of diabetes\n- Low activity level\n- Former smoker\n\n**Expected Result:** MEDIUM risk"
+          },
+          "response": []
+        },
+        {
+          "name": "High Risk Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('High risk detected', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const riskLevel = responseJson.prediction.risk_level;",
+                  "    const diabetesProb = responseJson.prediction.diabetes_probability;",
+                  "    ",
+                  "    // Should be high risk",
+                  "    pm.expect(riskLevel).to.eql('HIGH');",
+                  "    pm.expect(diabetesProb).to.be.above(0.6);",
+                  "});",
+                  "",
+                  "pm.test('Immediate medical consultation recommended', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const clinicalAction = responseJson.recommendations.clinical_action.toLowerCase();",
+                  "    pm.expect(clinicalAction).to.include('immediate');",
+                  "});",
+                  "",
+                  "pm.test('Multiple lifestyle recommendations provided', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const lifestyleFactors = responseJson.recommendations.lifestyle_factors;",
+                  "    pm.expect(lifestyleFactors).to.be.an('array');",
+                  "    pm.expect(lifestyleFactors.length).to.be.above(2);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 65,\n  \"gender\": 1,\n  \"bmi\": 32.5,\n  \"bp_systolic\": 150,\n  \"bp_diastolic\": 95,\n  \"glucose\": 180,\n  \"insulin\": 45.0,\n  \"family_history\": 1,\n  \"activity_level\": 1,\n  \"smoking\": 2\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test prediction for an elderly patient with multiple high-risk diabetes factors.\n\n**Patient Profile:**\n- 65-year-old male\n- Obese BMI (32.5)\n- High blood pressure (150/95)\n- High glucose (180 mg/dL)\n- High insulin (45.0 μU/mL)\n- Family history of diabetes\n- Very low activity level\n- Current smoker\n\n**Expected Result:** HIGH risk with immediate medical consultation recommended"
+          },
+          "response": []
+        },
+        {
+          "name": "Custom Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Valid prediction response', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.prediction.risk_level).to.be.oneOf(['LOW', 'MEDIUM', 'HIGH']);",
+                  "    pm.expect(responseJson.prediction.diabetes_probability).to.be.within(0, 1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 50,\n  \"gender\": 0,\n  \"bmi\": 26.8,\n  \"bp_systolic\": 125,\n  \"bp_diastolic\": 82,\n  \"glucose\": 102,\n  \"insulin\": 18.5,\n  \"family_history\": 0,\n  \"activity_level\": 3,\n  \"smoking\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Customizable request for testing your own patient scenarios.\n\n**Field Definitions:**\n- `age`: 18-100 years\n- `gender`: 0=Female, 1=Male\n- `bmi`: 15-50 kg/m²\n- `bp_systolic`: 90-200 mmHg\n- `bp_diastolic`: 60-120 mmHg\n- `glucose`: 70-300 mg/dL\n- `insulin`: 2-100 μU/mL\n- `family_history`: 0=No, 1=Yes\n- `activity_level`: 1-5 (1=Very Low, 5=Very High)\n- `smoking`: 0=Never, 1=Former, 2=Current\n\n**Modify the request body to test different patient profiles.**"
+          },
+          "response": []
+        }
+      ],
+      "description": "Individual diabetes risk prediction endpoints with different patient risk profiles for comprehensive testing."
+    },
+    {
+      "name": "Batch Operations",
+      "item": [
+        {
+          "name": "Batch Prediction - Multiple Patients",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Batch results structure is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('batch_results');",
+                  "    pm.expect(responseJson).to.have.property('total_patients');",
+                  "    pm.expect(responseJson).to.have.property('timestamp');",
+                  "});",
+                  "",
+                  "pm.test('All patients processed successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const batchResults = responseJson.batch_results;",
+                  "    const totalPatients = responseJson.total_patients;",
+                  "    ",
+                  "    pm.expect(batchResults).to.have.lengthOf(totalPatients);",
+                  "    ",
+                  "    batchResults.forEach((result, index) => {",
+                  "        pm.expect(result).to.have.property('patient_index', index);",
+                  "        pm.expect(result).to.have.property('status', 'success');",
+                  "        pm.expect(result.prediction.prediction.risk_level).to.be.oneOf(['LOW', 'MEDIUM', 'HIGH']);",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Different risk levels detected in batch', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const riskLevels = responseJson.batch_results.map(r => r.prediction.prediction.risk_level);",
+                  "    const uniqueRiskLevels = [...new Set(riskLevels)];",
+                  "    pm.expect(uniqueRiskLevels.length).to.be.above(1);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patients\": [\n    {\n      \"age\": 30,\n      \"gender\": 0,\n      \"bmi\": 23.0,\n      \"bp_systolic\": 115,\n      \"bp_diastolic\": 75,\n      \"glucose\": 90,\n      \"insulin\": 10.0,\n      \"family_history\": 0,\n      \"activity_level\": 3,\n      \"smoking\": 0\n    },\n    {\n      \"age\": 55,\n      \"gender\": 1,\n      \"bmi\": 28.0,\n      \"bp_systolic\": 140,\n      \"bp_diastolic\": 90,\n      \"glucose\": 130,\n      \"insulin\": 25.0,\n      \"family_history\": 1,\n      \"activity_level\": 2,\n      \"smoking\": 1\n    },\n    {\n      \"age\": 42,\n      \"gender\": 0,\n      \"bmi\": 31.2,\n      \"bp_systolic\": 145,\n      \"bp_diastolic\": 92,\n      \"glucose\": 155,\n      \"insulin\": 35.0,\n      \"family_history\": 1,\n      \"activity_level\": 1,\n      \"smoking\": 0\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict/batch",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict",
+                "batch"
+              ]
+            },
+            "description": "Process multiple patients in a single request for efficient bulk screening.\n\n**Use Cases:**\n- Hospital screening programs\n- Population health assessments\n- Clinical research studies\n- Batch processing of patient records\n\n**This example includes:**\n- Low-risk young patient\n- Medium-risk middle-aged patient\n- High-risk patient with multiple factors"
+          },
+          "response": []
+        }
+      ],
+      "description": "Batch processing endpoints for handling multiple patients efficiently."
+    },
+    {
+      "name": "Error Handling & Edge Cases",
+      "item": [
+        {
+          "name": "Missing Required Fields",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates missing fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('error');",
+                  "    pm.expect(responseJson).to.have.property('details');",
+                  "    pm.expect(responseJson.details).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 45,\n  \"gender\": 1,\n  \"bmi\": 28.5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test API validation with incomplete patient data. Missing required fields should return a 400 error with details about what's missing."
+          },
+          "response": []
+        },
+        {
+          "name": "Invalid Data Types",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error response structure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": \"forty-five\",\n  \"gender\": \"male\",\n  \"bmi\": \"overweight\",\n  \"bp_systolic\": 130,\n  \"bp_diastolic\": 85,\n  \"glucose\": 110,\n  \"insulin\": 20.0,\n  \"family_history\": \"yes\",\n  \"activity_level\": 2,\n  \"smoking\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test API validation with incorrect data types. String values where numbers are expected should return validation errors."
+          },
+          "response": []
+        },
+        {
+          "name": "Out of Range Values",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation errors for out of range values', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.error).to.eql('Invalid input');",
+                  "    pm.expect(responseJson.details).to.be.an('array');",
+                  "    pm.expect(responseJson.details.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 150,\n  \"gender\": 1,\n  \"bmi\": 999,\n  \"bp_systolic\": 300,\n  \"bp_diastolic\": 85,\n  \"glucose\": 1000,\n  \"insulin\": 200,\n  \"family_history\": 1,\n  \"activity_level\": 10,\n  \"smoking\": 5\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test API validation with values outside acceptable medical ranges. Should return specific validation errors for each out-of-range field."
+          },
+          "response": []
+        },
+        {
+          "name": "Empty JSON Body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 404', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message for invalid endpoint', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.error).to.eql('Endpoint not found');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/invalid-endpoint",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "invalid-endpoint"
+              ]
+            },
+            "description": "Test API behavior when accessing non-existent endpoints. Should return 404 with appropriate error message."
+          },
+          "response": []
+        }
+      ],
+      "description": "Test error handling and edge cases to ensure robust API behavior in production."
+    },
+    {
+      "name": "Performance & Load Testing",
+      "item": [
+        {
+          "name": "Latency Test - Single Prediction",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response time is acceptable for clinical use', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(1000);",
+                  "});",
+                  "",
+                  "pm.test('Sub-second response for real-time clinical decision support', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(500);",
+                  "});",
+                  "",
+                  "// Log response time for monitoring",
+                  "console.log('Prediction response time: ' + pm.response.responseTime + 'ms');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 50,\n  \"gender\": 1,\n  \"bmi\": 27.8,\n  \"bp_systolic\": 135,\n  \"bp_diastolic\": 88,\n  \"glucose\": 115,\n  \"insulin\": 22.5,\n  \"family_history\": 1,\n  \"activity_level\": 2,\n  \"smoking\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test single prediction latency to ensure it meets clinical decision support requirements (< 500ms for real-time use)."
+          },
+          "response": []
+        },
+        {
+          "name": "Batch Performance Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Batch processing is efficient', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const patientCount = responseJson.total_patients;",
+                  "    const responseTime = pm.response.responseTime;",
+                  "    const timePerPatient = responseTime / patientCount;",
+                  "    ",
+                  "    pm.expect(timePerPatient).to.be.below(200); // < 200ms per patient",
+                  "    console.log('Time per patient: ' + timePerPatient.toFixed(2) + 'ms');",
+                  "});",
+                  "",
+                  "pm.test('All patients processed successfully', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const successfulPredictions = responseJson.batch_results.filter(r => r.status === 'success').length;",
+                  "    pm.expect(successfulPredictions).to.eql(responseJson.total_patients);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"patients\": [\n    {\"age\": 25, \"gender\": 0, \"bmi\": 22.0, \"bp_systolic\": 110, \"bp_diastolic\": 70, \"glucose\": 85, \"insulin\": 8.0, \"family_history\": 0, \"activity_level\": 4, \"smoking\": 0},\n    {\"age\": 35, \"gender\": 1, \"bmi\": 25.5, \"bp_systolic\": 120, \"bp_diastolic\": 80, \"glucose\": 95, \"insulin\": 12.0, \"family_history\": 0, \"activity_level\": 3, \"smoking\": 0},\n    {\"age\": 45, \"gender\": 0, \"bmi\": 28.0, \"bp_systolic\": 130, \"bp_diastolic\": 85, \"glucose\": 105, \"insulin\": 18.0, \"family_history\": 1, \"activity_level\": 2, \"smoking\": 1},\n    {\"age\": 55, \"gender\": 1, \"bmi\": 30.5, \"bp_systolic\": 140, \"bp_diastolic\": 90, \"glucose\": 125, \"insulin\": 25.0, \"family_history\": 1, \"activity_level\": 2, \"smoking\": 1},\n    {\"age\": 65, \"gender\": 0, \"bmi\": 32.0, \"bp_systolic\": 150, \"bp_diastolic\": 95, \"glucose\": 145, \"insulin\": 35.0, \"family_history\": 1, \"activity_level\": 1, \"smoking\": 0}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict/batch",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict",
+                "batch"
+              ]
+            },
+            "description": "Test batch processing performance with 5 patients to ensure efficient bulk processing for screening programs."
+          },
+          "response": []
+        }
+      ],
+      "description": "Performance testing to ensure the API meets clinical performance requirements."
+    },
+    {
+      "name": "Clinical Scenarios",
+      "item": [
+        {
+          "name": "Pre-Diabetic Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Pre-diabetic risk level detected', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const diabetesProb = responseJson.prediction.diabetes_probability;",
+                  "    const riskLevel = responseJson.prediction.risk_level;",
+                  "    ",
+                  "    // Pre-diabetic patients typically have medium risk",
+                  "    pm.expect(riskLevel).to.be.oneOf(['MEDIUM', 'HIGH']);",
+                  "    pm.expect(diabetesProb).to.be.above(0.3);",
+                  "});",
+                  "",
+                  "pm.test('Lifestyle interventions recommended', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const lifestyleFactors = responseJson.recommendations.lifestyle_factors;",
+                  "    pm.expect(lifestyleFactors).to.be.an('array');",
+                  "    pm.expect(lifestyleFactors.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 48,\n  \"gender\": 0,\n  \"bmi\": 28.5,\n  \"bp_systolic\": 135,\n  \"bp_diastolic\": 88,\n  \"glucose\": 115,\n  \"insulin\": 22.0,\n  \"family_history\": 1,\n  \"activity_level\": 2,\n  \"smoking\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test scenario for a pre-diabetic patient with borderline glucose levels and risk factors.\n\n**Clinical Context:**\n- Glucose 115 mg/dL (pre-diabetic range: 100-125)\n- Overweight BMI\n- Family history of diabetes\n- Low physical activity\n- Should trigger lifestyle intervention recommendations"
+          },
+          "response": []
+        },
+        {
+          "name": "Gestational Diabetes Risk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Pregnancy-related diabetes risk assessed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const riskLevel = responseJson.prediction.risk_level;",
+                  "    const diabetesProb = responseJson.prediction.diabetes_probability;",
+                  "    ",
+                  "    // Young pregnant women with risk factors",
+                  "    pm.expect(['LOW', 'MEDIUM', 'HIGH']).to.include(riskLevel);",
+                  "    pm.expect(diabetesProb).to.be.within(0, 1);",
+                  "});",
+                  "",
+                  "pm.test('Clinical recommendations appropriate for pregnancy', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const clinicalAction = responseJson.recommendations.clinical_action;",
+                  "    pm.expect(clinicalAction).to.be.a('string');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 32,\n  \"gender\": 0,\n  \"bmi\": 29.0,\n  \"bp_systolic\": 125,\n  \"bp_diastolic\": 82,\n  \"glucose\": 108,\n  \"insulin\": 16.5,\n  \"family_history\": 1,\n  \"activity_level\": 2,\n  \"smoking\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test scenario simulating gestational diabetes risk assessment.\n\n**Clinical Context:**\n- Reproductive age female\n- Pre-pregnancy overweight\n- Family history of diabetes\n- Slightly elevated glucose\n- Common risk profile for gestational diabetes screening"
+          },
+          "response": []
+        },
+        {
+          "name": "Elderly Patient with Comorbidities",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('High risk appropriately identified in elderly', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const riskLevel = responseJson.prediction.risk_level;",
+                  "    const diabetesProb = responseJson.prediction.diabetes_probability;",
+                  "    ",
+                  "    // Elderly with multiple comorbidities should be high risk",
+                  "    pm.expect(riskLevel).to.eql('HIGH');",
+                  "    pm.expect(diabetesProb).to.be.above(0.6);",
+                  "});",
+                  "",
+                  "pm.test('Comprehensive care recommendations for elderly', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const lifestyleFactors = responseJson.recommendations.lifestyle_factors;",
+                  "    const clinicalAction = responseJson.recommendations.clinical_action;",
+                  "    ",
+                  "    pm.expect(lifestyleFactors).to.be.an('array');",
+                  "    pm.expect(clinicalAction.toLowerCase()).to.include('immediate');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 72,\n  \"gender\": 1,\n  \"bmi\": 31.5,\n  \"bp_systolic\": 155,\n  \"bp_diastolic\": 98,\n  \"glucose\": 165,\n  \"insulin\": 42.0,\n  \"family_history\": 1,\n  \"activity_level\": 1,\n  \"smoking\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test scenario for elderly patient with multiple diabetes risk factors and comorbidities.\n\n**Clinical Context:**\n- Advanced age (72 years)\n- Obesity (BMI 31.5)\n- Hypertension (155/98)\n- Elevated glucose (165 mg/dL)\n- High insulin resistance\n- Multiple risk factors requiring immediate intervention"
+          },
+          "response": []
+        },
+        {
+          "name": "Athlete Profile - Low Risk",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Athletic profile shows low diabetes risk', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const riskLevel = responseJson.prediction.risk_level;",
+                  "    const diabetesProb = responseJson.prediction.diabetes_probability;",
+                  "    ",
+                  "    // Athletes should typically have low risk",
+                  "    pm.expect(riskLevel).to.be.oneOf(['LOW', 'MEDIUM']);",
+                  "    pm.expect(diabetesProb).to.be.below(0.5);",
+                  "});",
+                  "",
+                  "pm.test('Minimal lifestyle interventions needed', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const clinicalAction = responseJson.recommendations.clinical_action.toLowerCase();",
+                  "    pm.expect(clinicalAction).to.include('routine');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"age\": 28,\n  \"gender\": 1,\n  \"bmi\": 21.5,\n  \"bp_systolic\": 105,\n  \"bp_diastolic\": 68,\n  \"glucose\": 78,\n  \"insulin\": 6.5,\n  \"family_history\": 0,\n  \"activity_level\": 5,\n  \"smoking\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/predict",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Test scenario for athletic individual with optimal health metrics.\n\n**Clinical Context:**\n- Young adult athlete\n- Optimal BMI (21.5)\n- Low blood pressure (105/68)\n- Low glucose (78 mg/dL)\n- High physical activity level\n- No risk factors\n- Should demonstrate model's ability to identify truly low-risk individuals"
+          },
+          "response": []
+        }
+      ],
+      "description": "Real-world clinical scenarios to test the model's performance across different patient populations and risk profiles."
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "pm.globals.set('requestTimestamp', new Date().toISOString());",
+          "",
+          "// Log request details for debugging",
+          "console.log('Making request to: ' + pm.request.url);",
+          "console.log('Request method: ' + pm.request.method);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script - runs after every request",
+          "",
+          "// Log response details",
+          "console.log('Response status: ' + pm.response.status);",
+          "console.log('Response time: ' + pm.response.responseTime + 'ms');",
+          "",
+          "// Common tests for all endpoints",
+          "pm.test('Response has valid JSON', function () {",
+          "    pm.response.to.be.json;",
+          "});",
+          "",
+          "pm.test('Response time is reasonable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});",
+          "",
+          "// Set response data as global variables for chaining requests",
+          "if (pm.response.code === 200) {",
+          "    try {",
+          "        const responseJson = pm.response.json();",
+          "        if (responseJson.prediction) {",
+          "            pm.globals.set('lastPredictionRisk', responseJson.prediction.risk_level);",
+          "            pm.globals.set('lastPredictionProb', responseJson.prediction.diabetes_probability);",
+          "        }",
+          "    } catch (e) {",
+          "        // Response might not be JSON (e.g., metrics endpoint)",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ]
+}

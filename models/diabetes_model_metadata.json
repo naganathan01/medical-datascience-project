@@ -1,0 +1,55 @@
+{
+  "training_date": "2025-06-11T19:49:33.345673",
+  "accuracy": 0.81875,
+  "auc_score": 0.902975177659894,
+  "cv_auc_mean": 0.8965126723023294,
+  "cv_auc_std": 0.009841874927244866,
+  "sensitivity": 0.808252427184466,
+  "specificity": 0.8298969072164949,
+  "ppv": 0.8345864661654135,
+  "npv": 0.8029925187032418,
+  "n_training_samples": 3200,
+  "n_test_samples": 800,
+  "feature_importance": [
+    {
+      "feature": "glucose",
+      "importance": 0.26868758196627435
+    },
+    {
+      "feature": "bmi",
+      "importance": 0.24512218863066296
+    },
+    {
+      "feature": "family_history",
+      "importance": 0.10594330123376046
+    },
+    {
+      "feature": "insulin",
+      "importance": 0.07753887432274172
+    },
+    {
+      "feature": "bp_systolic",
+      "importance": 0.07544029636552564
+    },
+    {
+      "feature": "age",
+      "importance": 0.07315711607584392
+    },
+    {
+      "feature": "bp_diastolic",
+      "importance": 0.059714491472258976
+    },
+    {
+      "feature": "activity_level",
+      "importance": 0.05819802628317099
+    },
+    {
+      "feature": "smoking",
+      "importance": 0.023954134333521067
+    },
+    {
+      "feature": "gender",
+      "importance": 0.012243989316239975
+    }
+  ]
+}

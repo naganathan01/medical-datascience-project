@@ -1,0 +1,24 @@
+# Diabetes API Output Explanation & Measurement Guide
+
+## 🎯 **Complete API Response Structure**
+
+When you make a prediction request, you get a comprehensive response with multiple sections. Here's what each part means:
+
+### **Example API Response**
+```json
+{
+  "prediction": {
+    "has_diabetes_risk": true,
+    "diabetes_probability": 0.743,
+    "no_diabetes_probability": 0.257,
+    "risk_level": "HIGH"
+  },
+  "recommendations": {
+    "clinical_action": "Immediate medical consultation recommended. Consider diabetes screening tests (HbA1c, fasting glucose).",
+    "lifestyle_factors": [
+      "Weight management: Aim for gradual weight reduction",
+      "Physical activity: Increase to at least 150 minutes moderate exercise per week",
+      "Smoking cessation: Strongly recommended - increases diabetes risk significantly",
+      "Blood pressure management: Monitor and manage hypertension"
+    ]
+  },
